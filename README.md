@@ -1,4 +1,4 @@
-# Chrome Browser GPU 사용여부 확인 및 튜닝
+# Chrome Browser GPU 하드웨어 가속 가이드
 
 Windows 노트북 사용자가 Chrome에서 WebGL을 사용할 때 현재 브라우저의 WebGL/GPU 상태를 확인하고, 필요한 경우 고성능 GPU 설정 방법을 안내하는 GitHub Pages용 정적 페이지입니다.
 
@@ -40,7 +40,7 @@ python -m http.server 8000
 - 삼각형 최대 2,000,000개, 큐브 최대 1,200,000개, Draw Call 최대 50,000회까지 단계적으로 부하 조절
 - 벤치마크는 페이지 로드 시 자동 실행하지 않고 사용자가 `시작` 버튼을 눌러 실행
 - Chrome 및 Windows 그래픽 설정 가이드
-- `images` 폴더의 Windows 그래픽 설정 화면 예시를 활용한 단계별 이미지 가이드
+- `images` 폴더의 Windows 그래픽 설정 및 Chrome 그래픽 가속 화면 예시를 활용한 단계별 이미지 가이드
 - `chrome://gpu` 등 복사 가능한 코드 박스
 - 사용자 체크리스트
 - FAQ 아코디언

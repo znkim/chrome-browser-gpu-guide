@@ -514,14 +514,20 @@ h3 {
 }
 
 .screenshot-card figcaption {
-  display: grid;
-  gap: 4px;
   padding: 14px 16px 16px;
   color: var(--muted);
 }
 
 .screenshot-card figcaption strong {
+  display: block;
   color: var(--text);
+}
+
+.screenshot-card figcaption code {
+  display: inline-block;
+  min-height: 0;
+  padding: 0.05rem 0.28rem;
+  vertical-align: baseline;
 }
 
 .checklist {

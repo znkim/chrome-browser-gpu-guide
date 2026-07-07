@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Chrome Browser GPU 사용여부 확인 및 튜닝</title>
+    <title>Chrome Browser GPU 하드웨어 가속 가이드</title>
     <meta name="description" content="Chrome에서 WebGL, GPU, 렌더러 상태를 확인하고 Windows 고성능 GPU 설정과 간단한 WebGL 벤치마크를 제공합니다.">
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -16,7 +16,7 @@
           <p class="eyebrow">WebGL/GPU 진단</p>
           <h1 class="hero-title">
             <img src="favicon.svg" alt="" aria-hidden="true">
-            <span>Chrome Browser GPU 사용여부 확인 및 튜닝</span>
+            <span>Chrome Browser GPU 하드웨어 가속 가이드</span>
           </h1>
           <p class="lead">
             WebGL을 사용할 때 현재 브라우저가 어떤 WebGL 버전과 GPU 렌더러를 사용하는지 확인합니다.
@@ -170,20 +170,28 @@
 
             <div class="screenshot-grid">
               <figure class="screenshot-card">
+                <img src="images/0-start-menu-graphic-setting.png" alt="Windows 시작 메뉴에서 그래픽 설정을 검색하는 화면" loading="lazy">
+                <figcaption><strong>1. 그래픽 설정 검색</strong>Windows 시작 메뉴에서 “그래픽 설정”을 검색해 설정 화면을 엽니다.</figcaption>
+              </figure>
+              <figure class="screenshot-card">
                 <img src="images/1-graphic-page.png" alt="Windows 설정의 시스템, 디스플레이, 그래픽 설정 페이지 화면" loading="lazy">
-                <figcaption><strong>1. 그래픽 설정 열기</strong>Windows 설정 &gt; 시스템 &gt; 디스플레이 &gt; 그래픽으로 이동합니다.</figcaption>
+                <figcaption><strong>2. 그래픽 설정 열기</strong>Windows 설정 &gt; 시스템 &gt; 디스플레이 &gt; 그래픽 화면에서 앱 목록을 확인합니다. Chrome이 보이지 않으면 “데스크톱 앱 추가”로 Chrome을 추가합니다.</figcaption>
               </figure>
               <figure class="screenshot-card">
                 <img src="images/2-select-chrome.png" alt="Windows 그래픽 설정에서 Chrome 앱을 선택하는 화면" loading="lazy">
-                <figcaption><strong>2. Chrome 선택</strong>앱 목록에서 Chrome을 선택합니다. 목록에 없으면 Chrome 실행 파일 경로를 추가합니다.</figcaption>
+                <figcaption><strong>3. chrome.exe 선택</strong>Chrome이 목록에 없을 때만 파일 선택창에서 <code>chrome.exe</code>를 선택합니다. 이미 Chrome 항목이 보이면 이 단계는 건너뛰고 4단계로 이동합니다.</figcaption>
               </figure>
               <figure class="screenshot-card">
                 <img src="images/3-select-gpu-preference.png" alt="Windows 그래픽 기본 설정에서 고성능 GPU 옵션을 선택하는 화면" loading="lazy">
-                <figcaption><strong>3. 고성능 선택</strong>옵션에서 고성능 GPU를 선택한 뒤 저장합니다.</figcaption>
+                <figcaption><strong>4. 고성능 선택</strong>옵션에서 고성능 GPU를 선택한 뒤 저장합니다.</figcaption>
               </figure>
               <figure class="screenshot-card">
                 <img src="images/4-done.png" alt="Windows 그래픽 설정에서 Chrome이 고성능으로 설정된 완료 화면" loading="lazy">
-                <figcaption><strong>4. 적용 확인</strong>Chrome이 고성능으로 표시되는지 확인하고 브라우저를 완전히 종료한 뒤 다시 실행합니다.</figcaption>
+                <figcaption><strong>5. 적용 확인</strong>Chrome이 고성능으로 표시되는지 확인하고 브라우저를 완전히 종료한 뒤 다시 실행합니다.</figcaption>
+              </figure>
+              <figure class="screenshot-card">
+                <img src="images/5-chorme-gpu-acceleration.png" alt="Chrome 설정 페이지에서 그래픽 가속 사용 옵션을 확인하는 화면" loading="lazy">
+                <figcaption><strong>6. Chrome 그래픽 가속 확인</strong><code>chrome://settings/system</code>에서 “가능한 경우 그래픽 가속 사용”이 켜져 있는지 확인합니다.</figcaption>
               </figure>
             </div>
           </div>

@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chrome Browser GPU 사용여부 확인 및 튜닝</title>
+    <meta name="description" content="Chrome에서 WebGL, GPU, 렌더러 상태를 확인하고 Windows 고성능 GPU 설정과 간단한 WebGL 벤치마크를 제공합니다.">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header" id="top">
+      <div class="container header-grid">
+        <div>
+          <p class="eyebrow">WebGL/GPU 진단</p>
+          <h1>⚙️ Chrome Browser GPU 사용여부 확인 및 튜닝</h1>
+          <p class="lead">
+            WebGL을 사용할 때 현재 브라우저가 어떤 WebGL 버전과 GPU 렌더러를 사용하는지 확인합니다.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section diagnostic-section" aria-labelledby="diagnostic-title">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">자동 검사</p>
+              <h2 id="diagnostic-title">내 브라우저 WebGL/GPU 진단</h2>
+            </div>
+            <button class="button primary" type="button" id="rerunDiagnostic" aria-label="WebGL 및 GPU 진단 다시 검사">다시 검사</button>
+          </div>
+
+          <div class="privacy-note" role="note">
+            <strong>개인정보 안내</strong>
+            <p>
+              이 페이지는 브라우저에서 확인 가능한 WebGL/GPU 정보를 화면에 표시할 뿐 서버로 전송하지 않습니다.
+              GitHub Pages 정적 페이지이므로 별도 서버 저장 기능은 없습니다. 단, 브라우저/GPU 정보는 사용자의 환경을 식별하는 단서가 될 수 있으므로 공유 시 주의해 주세요.
+            </p>
+          </div>
+
+          <div class="diagnostic-panel" id="diagnosticResult" aria-live="polite">
+            <p>진단을 준비하고 있습니다.</p>
+          </div>
+
+          <div class="setup-alert hidden" id="setupAlert">
+            <h3>설정이 필요할 수 있습니다</h3>
+            <p>
+              WebGL이 비활성화되었거나 내장 그래픽/소프트웨어 렌더러를 사용하는 것으로 보이면 아래 항목을 복사해 브라우저 주소창 또는 Windows 그래픽 설정에서 확인해 보세요.
+            </p>
+            <div class="copy-grid" id="quickCopyList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section benchmark-section" aria-labelledby="benchmark-title">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">간단 벤치마크</p>
+              <h2 id="benchmark-title">WebGL Primitive FPS 테스트</h2>
+              <p class="section-copy">
+                실제 서비스 성능을 그대로 대체하지는 않지만, 브라우저의 WebGL 렌더링 부하를 빠르게 비교할 수 있는 참고용 테스트입니다.
+              </p>
+            </div>
+          </div>
+
+          <div class="benchmark-panel">
+            <div class="benchmark-canvas-wrap">
+              <canvas id="benchmarkCanvas" width="960" height="540" aria-label="WebGL primitive 벤치마크 화면"></canvas>
+              <p class="canvas-fallback" id="benchmarkFallback">WebGL 벤치마크를 준비하고 있습니다.</p>
+            </div>
+
+            <div class="benchmark-controls" aria-label="WebGL 벤치마크 조절">
+              <div class="metric-grid">
+                <div class="metric-card">
+                  <span class="metric-label">FPS</span>
+                  <strong id="fpsValue">0</strong>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-label" id="primitiveMetricLabel">삼각형</span>
+                  <strong id="primitiveValue">10,000</strong>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-label">WebGL</span>
+                  <strong id="benchmarkMode">확인 중</strong>
+                </div>
+              </div>
+
+              <div class="test-mode-group" role="group" aria-label="벤치마크 테스트 선택">
+                <button class="button mode-button is-active" type="button" data-test-mode="triangles" aria-pressed="true">삼각형</button>
+                <button class="button mode-button" type="button" data-test-mode="cubes" aria-pressed="false">날아다니는 큐브</button>
+              </div>
+
+              <label class="range-control" for="primitiveCount">
+                <span id="primitiveRangeLabel">삼각형 개수</span>
+                <input id="primitiveCount" type="range" min="1000" max="1000000" step="1000" value="10000">
+              </label>
+
+              <div class="button-row">
+                <button class="button primary" type="button" id="startBenchmark" aria-label="WebGL 벤치마크 시작">시작</button>
+                <button class="button" type="button" id="pauseBenchmark" aria-label="WebGL 벤치마크 일시정지">일시정지</button>
+                <button class="button" type="button" id="resetBenchmark" aria-label="WebGL 벤치마크 초기화">초기화</button>
+              </div>
+
+              <p class="benchmark-note">
+                값은 화면 크기, 배터리 모드, 브라우저 탭 상태, GPU 드라이버에 따라 달라집니다. 비교할 때는 충전기를 연결하고 같은 primitive 개수로 확인하세요.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="guide-title">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">설정 가이드</p>
+              <h2 id="guide-title">단계별 확인 방법</h2>
+            </div>
+          </div>
+
+          <div class="guide-grid">
+            <article class="guide-card">
+              <span class="step-number">1단계</span>
+              <h3>Chrome 그래픽 가속 켜기</h3>
+              <ul>
+                <li><code>chrome://settings/system</code> 접속</li>
+                <li>“가능한 경우 그래픽 가속 사용” 켜기</li>
+                <li>브라우저 재시작</li>
+              </ul>
+            </article>
+
+            <article class="guide-card">
+              <span class="step-number">2단계</span>
+              <h3>Windows에서 브라우저를 고성능 GPU로 지정</h3>
+              <ul>
+                <li>Windows 설정 &gt; 시스템 &gt; 디스플레이 &gt; 그래픽</li>
+                <li>Chrome 선택</li>
+                <li>옵션 &gt; 고성능 선택</li>
+                <li>저장 후 브라우저 완전 종료 및 재실행</li>
+              </ul>
+            </article>
+
+            <article class="guide-card">
+              <span class="step-number">3단계</span>
+              <h3>적용 여부 확인</h3>
+              <ul>
+                <li><code>chrome://gpu</code> 접속</li>
+                <li>WebGL: Hardware accelerated</li>
+                <li>WebGL2: Hardware accelerated</li>
+                <li>Renderer / GL_RENDERER 항목에서 NVIDIA, GeForce, RTX, AMD, Radeon 등이 보이는지 확인</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="screenshot-guide" aria-labelledby="windows-screenshot-title">
+            <div class="section-heading compact">
+              <div>
+                <p class="eyebrow">Windows 화면 예시</p>
+                <h3 id="windows-screenshot-title">그래픽 설정에서 Chrome을 고성능 GPU로 지정하기</h3>
+              </div>
+            </div>
+
+            <div class="screenshot-grid">
+              <figure class="screenshot-card">
+                <img src="images/1-graphic-page.png" alt="Windows 설정의 시스템, 디스플레이, 그래픽 설정 페이지 화면" loading="lazy">
+                <figcaption><strong>1. 그래픽 설정 열기</strong>Windows 설정 &gt; 시스템 &gt; 디스플레이 &gt; 그래픽으로 이동합니다.</figcaption>
+              </figure>
+              <figure class="screenshot-card">
+                <img src="images/2-select-chrome.png" alt="Windows 그래픽 설정에서 Chrome 앱을 선택하는 화면" loading="lazy">
+                <figcaption><strong>2. Chrome 선택</strong>앱 목록에서 Chrome을 선택합니다. 목록에 없으면 Chrome 실행 파일 경로를 추가합니다.</figcaption>
+              </figure>
+              <figure class="screenshot-card">
+                <img src="images/3-select-gpu-preference.png" alt="Windows 그래픽 기본 설정에서 고성능 GPU 옵션을 선택하는 화면" loading="lazy">
+                <figcaption><strong>3. 고성능 선택</strong>옵션에서 고성능 GPU를 선택한 뒤 저장합니다.</figcaption>
+              </figure>
+              <figure class="screenshot-card">
+                <img src="images/4-done.png" alt="Windows 그래픽 설정에서 Chrome이 고성능으로 설정된 완료 화면" loading="lazy">
+                <figcaption><strong>4. 적용 확인</strong>Chrome이 고성능으로 표시되는지 확인하고 브라우저를 완전히 종료한 뒤 다시 실행합니다.</figcaption>
+              </figure>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section soft-section" aria-labelledby="copy-title">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">빠른 복사</p>
+              <h2 id="copy-title">설정 주소와 실행 파일 경로</h2>
+            </div>
+          </div>
+          <div class="copy-grid" id="copyList"></div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="checklist-title">
+        <div class="container narrow">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">체크리스트</p>
+              <h2 id="checklist-title">설정 완료 확인</h2>
+            </div>
+          </div>
+          <form class="checklist">
+            <label><input type="checkbox"> 브라우저 그래픽 가속을 켰습니다.</label>
+            <label><input type="checkbox"> Windows 그래픽 설정에서 Chrome을 고성능으로 지정했습니다.</label>
+            <label><input type="checkbox"> 브라우저를 완전히 종료하고 다시 실행했습니다.</label>
+            <label><input type="checkbox"> 노트북 충전기를 연결했습니다.</label>
+            <label><input type="checkbox"> chrome://gpu에서 WebGL 상태를 확인했습니다.</label>
+            <label><input type="checkbox"> WebGL 페이지를 다시 열어 성능을 확인했습니다.</label>
+          </form>
+        </div>
+      </section>
+
+      <section class="section soft-section" aria-labelledby="faq-title">
+        <div class="container narrow">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">FAQ</p>
+              <h2 id="faq-title">자주 묻는 질문</h2>
+            </div>
+          </div>
+
+          <div class="faq-list">
+            <details>
+              <summary>좋은 GPU가 있는데 왜 WebGL 페이지가 느린가요?</summary>
+              <p>Windows가 전원 절약을 위해 브라우저를 내장 그래픽으로 실행할 수 있습니다. 브라우저 그래픽 가속과 Windows 그래픽 설정을 함께 확인해 보세요.</p>
+            </details>
+            <details>
+              <summary>Intel GPU가 표시되면 무조건 문제인가요?</summary>
+              <p>무조건 문제는 아닙니다. 가벼운 WebGL 페이지는 Intel 내장 그래픽으로도 충분할 수 있습니다. 렌더링 부하가 큰 WebGL 페이지에서 느리다면 고성능 GPU 지정을 권장합니다.</p>
+            </details>
+            <details>
+              <summary>NVIDIA 또는 AMD Radeon GPU가 표시되면 무조건 빠른가요?</summary>
+              <p>가능성이 높지만 데이터 크기, 드라이버 상태, 브라우저 설정, 전원 모드, 네트워크 상태에 따라 성능이 달라질 수 있습니다.</p>
+            </details>
+            <details>
+              <summary>이 설정을 하면 배터리가 빨리 닳나요?</summary>
+              <p>고성능 GPU를 사용하면 전력 사용량이 늘 수 있습니다. 장시간 WebGL 페이지를 사용할 때는 충전기를 연결하는 것이 좋습니다.</p>
+            </details>
+            <details>
+              <summary>회사 보안 PC나 원격 데스크톱에서도 적용되나요?</summary>
+              <p>보안 정책, 가상화, 원격 데스크톱 환경에서는 WebGL 또는 GPU 가속이 제한될 수 있습니다. 이 경우 IT 관리자 정책이나 원격 환경의 GPU 지원 여부를 확인해야 합니다.</p>
+            </details>
+            <details>
+              <summary>WebGL이 Software only 또는 SwiftShader로 보이면 어떻게 해야 하나요?</summary>
+              <p>브라우저 그래픽 가속을 켜고 NVIDIA 또는 AMD Radeon 드라이버를 업데이트한 뒤, Windows 그래픽 설정에서 Chrome을 고성능으로 지정해 보세요. 그래도 동일하면 보안 정책이나 원격 실행 환경을 확인해 주세요.</p>
+            </details>
+            <details>
+              <summary>특정 웹사이트만의 문제인가요?</summary>
+              <p>아닐 수 있습니다. WebGL을 사용하는 페이지라면 브라우저 그래픽 가속, GPU 선택, 드라이버 상태의 영향을 받을 수 있습니다.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>이 페이지는 정적 HTML/CSS/JavaScript로 동작하며 진단 정보를 저장하지 않습니다.</p>
+        <p>
+          <a href="https://github.com/znkim" target="_blank" rel="noopener noreferrer" aria-label="znkim GitHub 프로필 새 탭에서 열기">
+            GitHub @znkim
+          </a>
+        </p>
+      </div>
+    </footer>
+
+    <button class="top-button" type="button" id="backToTop" aria-label="맨 위로 이동">↑</button>
+    <script src="script.js"></script>
+  </body>
+</html>

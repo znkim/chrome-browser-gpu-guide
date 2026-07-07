@@ -93,6 +93,22 @@ h1 {
   white-space: nowrap;
 }
 
+.hero-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.hero-title img {
+  width: 0.95em;
+  height: 0.95em;
+  flex: 0 0 auto;
+}
+
+.hero-title span {
+  min-width: 0;
+}
+
 h2 {
   font-size: clamp(1.42rem, 2.7vw, 2.05rem);
 }
@@ -110,7 +126,6 @@ h3 {
 }
 
 .header-note,
-.privacy-note,
 .setup-alert,
 .diagnostic-panel,
 .benchmark-panel,
@@ -192,8 +207,15 @@ h3 {
 
 .privacy-note {
   margin-bottom: 20px;
-  padding: 18px 20px;
-  background: rgba(14, 24, 38, 0.92);
+  border-left: 3px solid rgba(76, 201, 240, 0.5);
+  padding: 8px 0 8px 12px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.privacy-note strong {
+  color: #c9d7e8;
+  font-size: 0.86rem;
 }
 
 .diagnostic-panel {
@@ -645,7 +667,6 @@ h3 {
   .benchmark-panel,
   .guide-card,
   .setup-alert,
-  .privacy-note,
   .checklist {
     padding: 16px;
   }

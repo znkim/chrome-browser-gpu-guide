@@ -139,8 +139,8 @@
     if (info.contextType === "webgl2" && highPerformancePattern.test(rendererText)) {
       return {
         type: "good",
-        title: "정상 가능성 높음",
-        message: "현재 브라우저가 고성능 GPU 또는 하드웨어 가속을 사용 중일 가능성이 높습니다."
+        title: "정상",
+        message: "현재 브라우저는 WebGL2와 고성능 GPU를 사용하고 있으며, 하드웨어 가속이 활성화되어 있습니다."
       };
     }
 

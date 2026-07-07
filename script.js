@@ -344,6 +344,7 @@
 
   function createBenchmarkRenderer(gl, canvas, elements) {
     const vertexShaderSource = `
+      precision mediump float;
       attribute vec3 a_position;
       attribute vec3 a_center;
       attribute vec2 a_velocity;
@@ -352,6 +353,7 @@
       uniform float u_time;
       uniform float u_mode;
       varying vec3 v_color;
+      varying float v_phase;
       void main() {
         vec3 local = a_position;
         vec2 center = a_center.xy;
@@ -373,13 +375,23 @@
         vec2 pos = center + local.xy * perspective;
         gl_Position = vec4(pos, local.z * 0.05, 1.0);
         v_color = a_color;
+        v_phase = a_phase;
       }
     `;
     const fragmentShaderSource = `
       precision mediump float;
       varying vec3 v_color;
+      varying float v_phase;
+      uniform float u_time;
       void main() {
-        gl_FragColor = vec4(v_color, 0.88);
+        vec3 color = v_color;
+        float glow = 0.0;
+        for (int i = 0; i < 6; i++) {
+          float f = float(i) + 1.0;
+          glow += abs(sin(u_time * f * 0.37 + v_phase * f)) * 0.035;
+          color = mix(color, color.bgr, 0.045);
+        }
+        gl_FragColor = vec4(color + glow, 0.9);
       }
     `;
 
@@ -427,10 +439,10 @@
     }
 
     function setPrimitiveCount(nextCount) {
-      const maximum = mode === "cubes" ? 50000 : 1000000;
+      const maximum = getMaximumCount();
       primitiveCount = Math.max(100, Math.min(maximum, Number(nextCount) || getDefaultCount()));
-      const data = mode === "cubes" ? buildCubeData(primitiveCount) : buildTriangleData(primitiveCount);
-      vertexCount = mode === "cubes" ? primitiveCount * 36 : primitiveCount * 3;
+      const data = mode === "cubes" ? buildCubeData(primitiveCount) : mode === "drawcalls" ? buildDrawCallShapeData(primitiveCount) : buildTriangleData(primitiveCount);
+      vertexCount = mode === "cubes" || mode === "drawcalls" ? primitiveCount * 36 : primitiveCount * 3;
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
       if (elements.primitiveValue) elements.primitiveValue.textContent = primitiveCount.toLocaleString("ko-KR");
@@ -439,15 +451,15 @@
     function setMode(nextMode) {
       const wasRunning = running;
       pause();
-      mode = nextMode === "cubes" ? "cubes" : "triangles";
+      mode = nextMode === "cubes" || nextMode === "drawcalls" ? nextMode : "triangles";
 
       if (elements.primitiveCount) {
-        elements.primitiveCount.max = mode === "cubes" ? "50000" : "1000000";
-        elements.primitiveCount.step = mode === "cubes" ? "100" : "1000";
+        elements.primitiveCount.max = String(getMaximumCount());
+        elements.primitiveCount.step = mode === "drawcalls" ? "100" : mode === "cubes" ? "250" : "1000";
         elements.primitiveCount.value = String(getDefaultCount());
       }
-      if (elements.primitiveMetricLabel) elements.primitiveMetricLabel.textContent = mode === "cubes" ? "큐브" : "삼각형";
-      if (elements.primitiveRangeLabel) elements.primitiveRangeLabel.textContent = mode === "cubes" ? "큐브 개수" : "삼각형 개수";
+      if (elements.primitiveMetricLabel) elements.primitiveMetricLabel.textContent = getModeLabel();
+      if (elements.primitiveRangeLabel) elements.primitiveRangeLabel.textContent = `${getModeLabel()} 개수`;
 
       setPrimitiveCount(getDefaultCount());
       resetFps();
@@ -498,11 +510,31 @@
       gl.useProgram(program);
       gl.uniform1f(timeLocation, now * 0.001);
       gl.uniform1f(modeLocation, mode === "cubes" ? 1 : 0);
-      gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+      if (mode === "drawcalls") {
+        for (let i = 0; i < primitiveCount; i += 1) {
+          gl.drawArrays(gl.TRIANGLES, i * 36, 36);
+        }
+      } else {
+        gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+      }
     }
 
     function getDefaultCount() {
-      return mode === "cubes" ? 800 : 10000;
+      if (mode === "cubes") return 2000;
+      if (mode === "drawcalls") return 1000;
+      return 25000;
+    }
+
+    function getMaximumCount() {
+      if (mode === "cubes") return 1200000;
+      if (mode === "drawcalls") return 50000;
+      return 2000000;
+    }
+
+    function getModeLabel() {
+      if (mode === "cubes") return "큐브";
+      if (mode === "drawcalls") return "Draw Call";
+      return "삼각형";
     }
 
     function resetFps() {
@@ -526,7 +558,7 @@
       const row = Math.floor(i / 80);
       const x = (col / 79) * 2 - 1;
       const y = ((row % 80) / 79) * 2 - 1;
-      const size = 0.008 + ((i % 7) * 0.0018);
+      const size = 0.01 + ((i % 7) * 0.0024);
       const phase = (i % 360) * 0.01745;
       const r = 0.18 + ((i * 13) % 80) / 120;
       const g = 0.55 + ((i * 7) % 50) / 120;
@@ -574,11 +606,12 @@
       const centerY = randomSigned(i * 29 + 7) * 0.82;
       const velocityX = (randomSigned(i * 43 + 11) * 0.32) || 0.12;
       const velocityY = (randomSigned(i * 59 + 13) * 0.24) || -0.1;
-      const size = 0.018 + random01(i * 31 + 5) * 0.018;
+      const size = 0.012 + random01(i * 31 + 5) * 0.016;
       const phase = random01(i * 71 + 19) * 6.28318;
-      const baseR = 0.18 + random01(i * 23 + 1) * 0.38;
-      const baseG = 0.48 + random01(i * 37 + 2) * 0.4;
-      const baseB = 0.68 + random01(i * 41 + 4) * 0.28;
+      const rgbMode = i % 3;
+      const baseR = rgbMode === 0 ? 0.95 : 0.1 + random01(i * 23 + 1) * 0.16;
+      const baseG = rgbMode === 1 ? 0.95 : 0.1 + random01(i * 37 + 2) * 0.16;
+      const baseB = rgbMode === 2 ? 0.95 : 0.1 + random01(i * 41 + 4) * 0.16;
 
       for (let v = 0; v < cubeVertices.length; v += 1) {
         const point = cubeVertices[v];
@@ -599,6 +632,66 @@
     }
 
     return data;
+  }
+
+  function buildDrawCallShapeData(count) {
+    const floatsPerVertex = 12;
+    const shapeVertices = buildDrawCallShapeVertices();
+    const data = new Float32Array(count * shapeVertices.length * floatsPerVertex);
+    let cursor = 0;
+
+    for (let i = 0; i < count; i += 1) {
+      const col = i % 160;
+      const row = Math.floor(i / 160);
+      const centerX = (col / 159) * 1.92 - 0.96;
+      const centerY = ((row % 160) / 159) * 1.72 - 0.86;
+      const jitterX = randomSigned(i * 19 + 3) * 0.006;
+      const jitterY = randomSigned(i * 23 + 7) * 0.006;
+      const velocityX = randomSigned(i * 31 + 11) * 0.025;
+      const velocityY = randomSigned(i * 43 + 13) * 0.018;
+      const size = 0.012 + random01(i * 47 + 5) * 0.012;
+      const phase = random01(i * 53 + 17) * 6.28318;
+      const r = 0.72 + random01(i * 59 + 2) * 0.22;
+      const g = 0.32 + random01(i * 61 + 4) * 0.28;
+      const b = 0.74 + random01(i * 67 + 6) * 0.22;
+
+      for (const vertex of shapeVertices) {
+        data[cursor++] = vertex[0] * size;
+        data[cursor++] = vertex[1] * size;
+        data[cursor++] = vertex[2] * size;
+        data[cursor++] = centerX + jitterX;
+        data[cursor++] = centerY + jitterY;
+        data[cursor++] = 0;
+        data[cursor++] = velocityX;
+        data[cursor++] = velocityY;
+        data[cursor++] = r * vertex[3];
+        data[cursor++] = g * vertex[3];
+        data[cursor++] = b * vertex[3];
+        data[cursor++] = phase;
+      }
+    }
+
+    return data;
+  }
+
+  function buildDrawCallShapeVertices() {
+    const quads = [
+      [[0, 1.3, 0], [0.28, 0.28, 0], [0, 0, 0], [-0.28, 0.28, 0], 1.0],
+      [[1.3, 0, 0], [0.28, -0.28, 0], [0, 0, 0], [0.28, 0.28, 0], 0.9],
+      [[0, -1.3, 0], [-0.28, -0.28, 0], [0, 0, 0], [0.28, -0.28, 0], 0.82],
+      [[-1.3, 0, 0], [-0.28, 0.28, 0], [0, 0, 0], [-0.28, -0.28, 0], 0.94],
+      [[-0.5, 0.5, 0], [0, 0.22, 0], [0.5, 0.5, 0], [0, 0, 0], 0.78],
+      [[0.5, -0.5, 0], [0, -0.22, 0], [-0.5, -0.5, 0], [0, 0, 0], 0.72]
+    ];
+    const vertices = [];
+
+    for (const quad of quads) {
+      const shade = quad[4];
+      vertices.push([...quad[0], shade], [...quad[1], shade], [...quad[2], shade]);
+      vertices.push([...quad[0], shade], [...quad[2], shade], [...quad[3], shade]);
+    }
+
+    return vertices;
   }
 
   function random01(seed) {
